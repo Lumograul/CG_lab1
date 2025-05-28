@@ -302,6 +302,7 @@ void Game::Run() {
         //float color[] = { totalTime, 0.1f, 0.1f, 1.0f };
         float color[] = { 0.0f, 0.0f, 0.0f, 1.0f };
         context->ClearRenderTargetView(rtv, color);
+        context->ClearDepthStencilView(dsv, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 
 #pragma region Pong
@@ -510,7 +511,6 @@ void Game::Run() {
         camera->Update();
 
         camera->Draw();
-        context->ClearDepthStencilView(dsv, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 
         for (auto& sticky : stickers) {

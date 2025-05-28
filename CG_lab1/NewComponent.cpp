@@ -37,12 +37,12 @@ void NewComponent::Initialize() {
 
             // Было: 0-1-2 стало: 0-2-1
             indeces.push_back(first);
-            indeces.push_back(first + 1);  // <- Меняем порядок
+            indeces.push_back(first + 1);
             indeces.push_back(second);
 
             // Было: 2-3-1 стало: 2-1-3
             indeces.push_back(second);
-            indeces.push_back(first + 1);  // <- Меняем порядок
+            indeces.push_back(first + 1);
             indeces.push_back(second + 1);
         }
     }

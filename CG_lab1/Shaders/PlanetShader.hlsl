@@ -11,7 +11,7 @@ cbuffer TextureFlags : register(b2)
 
 struct VS_IN
 {
-    float4 pos : POSITION;
+    float4 pos : POSITION0;
     float4 col : COLOR;
     float2 tex : TEXCOORD0; // Добавляем текстурные координаты
 };
@@ -35,8 +35,10 @@ cbuffer CameraBuffer : register(b1)
 
 PS_IN VSMain(VS_IN input)
 {
-    PS_IN output;
-    output.pos = mul(mul(input.pos, transformationMatrix), viewProjection);
+    PS_IN output = (PS_IN) 0;
+    
+    float4 worldPos = mul(input.pos, transformationMatrix);
+    output.pos = mul(worldPos, viewProjection);
     output.col = input.col;
     output.tex = input.tex; // Передаем текстурные координаты
     return output;
@@ -44,8 +46,6 @@ PS_IN VSMain(VS_IN input)
 
 float4 PSMain(PS_IN input) : SV_TARGET
 {
-    return input.col;
-
     if (useTexture)
     {
         return objTexture.Sample(objSampler, input.tex);

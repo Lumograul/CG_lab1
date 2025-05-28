@@ -11,7 +11,7 @@ public:
     float GetHeightAt(float x, float z) const;
 
     struct Vertex {
-        XMFLOAT3 pos;
+        XMFLOAT4 pos;
         XMFLOAT4 col;
         XMFLOAT2 texCoord;
     };
