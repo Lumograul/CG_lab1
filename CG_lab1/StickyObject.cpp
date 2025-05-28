@@ -1,5 +1,4 @@
-﻿
-#include "StickyObject.h"
+﻿#include "StickyObject.h"
 #include <d3dcompiler.h>
 #include <vector>
 #include <cmath>
@@ -73,10 +72,10 @@ Vector3 ProjectVectorOntoPlane(const Vector3& vector, const Vector3& planeNormal
     return projectionOntoPlane;
 }
 
-StickyObject::StickyObject(ID3D11Device* device, ID3D11DeviceContext* context, Vector3 startCoords, InputDevice* inpDevice, const std::string& path, const DirectX::XMFLOAT4& color)
+StickyObject::StickyObject(ID3D11Device* device, ID3D11DeviceContext* context, Vector3 startCoords, InputDevice* inpDevice, const std::string& path, const std::string& texturePath, const DirectX::XMFLOAT4& color)
     : device(device), context(context), startCoords(startCoords), inpDevice(inpDevice)
 {
-    Initialize(path, color);
+    Initialize(path, texturePath, color);
 }
 
 StickyObject::~StickyObject() {
@@ -94,7 +93,7 @@ void StickyObject::Initialize(const std::string& path, const std::string& textur
         HRESULT result = DirectX::CreateDDSTextureFromFile(
             device,
             std::wstring(texturePath.begin(), texturePath.end()).c_str(),
-            &texture, 
+            &texture,
             &textureView
         );
 
@@ -108,7 +107,7 @@ void StickyObject::Initialize(const std::string& path, const std::string& textur
         samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
         device->CreateSamplerState(&samplerDesc, &samplerState);
     }
-    
+
     if (path != "") {
         MeshData mesh = ModelLoader::LoadModel(path, color);
         vertices = mesh.vertices;
@@ -184,8 +183,9 @@ void StickyObject::Initialize(const std::string& path, const std::string& textur
 
     // Input Layout
     D3D11_INPUT_ELEMENT_DESC layoutDesc[] = {
-        {"POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0,   D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16,  D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0},
     };
 
     device->CreateInputLayout(layoutDesc, 3, vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &inputLayout);
@@ -208,11 +208,20 @@ void StickyObject::Draw() {
     UINT stride = sizeof(Vertex);
     UINT offset = 0;
 
+    if (useTexture) {
+        context->PSSetShaderResources(0, 1, &textureView);
+        context->PSSetSamplers(0, 1, &samplerState);
+    }
+
     context->IASetInputLayout(inputLayout);
     context->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
     context->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
     context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     context->VSSetConstantBuffers(0, 1, &transformBuffer);
+
+    struct TextureFlags { int usTexture; float padding[3]; } flags = { useTexture };
+    ID3D11Buffer* flagBuffer = CreateFlagBuffer(device, &flags, sizeof(flags));
+    context->PSSetConstantBuffers(2, 1, &flagBuffer);
     context->VSSetShader(vertexShader, nullptr, 0);
     context->PSSetShader(pixelShader, nullptr, 0);
 
