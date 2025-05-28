@@ -1,0 +1,14 @@
+# Blender 4.0.1 MTL File: 'teasure_chest.blend'
+# www.cadnav.com
+
+newmtl Material
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd teasure.png
+map_Ns teasure_roughness.png
+map_refl teasure_metalness.png
+map_Bump -bm 1.000000 teasure_normal.png
