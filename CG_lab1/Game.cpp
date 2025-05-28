@@ -216,12 +216,14 @@ void Game::Initialize() {
     
 
     std::string path = "./chest/teasure_chest.obj";
+    std::string pathMtl = "./chest/teasure_chest.dds";
+
     std::string path2 = "./fox/source/LowPolyAnimal.obj";
     std::string path3 = "./candy-shop/source/Candy_shop.obj";
 
 
     //stickers.push_back(new StickyObject(device.Get(), context, { -10.0f, terrain->GetHeightAt(5.0f, 0.0f) + 0.3f, 0.0f }, inpDevice));
-    stickers.push_back(new StickyObject(device.Get(), context, { -5.f, terrain->GetHeightAt(5.0f, 0.0f) + 0.3f, 0.0f }, inpDevice, path));
+    stickers.push_back(new StickyObject(device.Get(), context, { -5.f, terrain->GetHeightAt(5.0f, 0.0f) + 0.3f, 0.0f }, inpDevice, path, pathMtl));
     //stickers.push_back(new StickyObject(device.Get(), context, { -7.5f, terrain->GetHeightAt(5.0f, 0.0f) + 0.3f, 0.0f }, inpDevice));
 
 

@@ -1,7 +1,8 @@
 struct VS_IN
 {
     float4 pos : POSITION0;
-    float4 col : COLOR0;
+    float4 col : COLOR;
+    float2 tex : TEXCOORD0; // Добавляем текстурные координаты
 };
 
 struct PS_IN
@@ -31,8 +32,14 @@ PS_IN VSMain(VS_IN input)
     return output;
 }
 
-float4 PSMain(PS_IN input) : SV_Target
+float4 PSMain(PS_IN input) : SV_TARGET
 {
-    float4 col = input.col;
-    return col;
+    if (useTexture)
+    {
+        return objTexture.Sample(objSampler, input.tex);
+    }
+    else
+    {
+        return input.col;
+    }
 }

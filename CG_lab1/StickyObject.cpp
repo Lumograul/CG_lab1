@@ -87,7 +87,28 @@ StickyObject::~StickyObject() {
     if (inputLayout) inputLayout->Release();
 }
 
-void StickyObject::Initialize(const std::string& path, const DirectX::XMFLOAT4& color) {
+void StickyObject::Initialize(const std::string& path, const std::string& texturePath, const DirectX::XMFLOAT4& color) {
+    CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+
+    if (!texturePath.empty()) {
+        HRESULT result = DirectX::CreateDDSTextureFromFile(
+            device,
+            std::wstring(texturePath.begin(), texturePath.end()).c_str(),
+            &texture, 
+            &textureView
+        );
+
+        useTexture = true;
+
+        // Создаем сэмплер
+        D3D11_SAMPLER_DESC samplerDesc = {};
+        samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+        samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+        samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+        samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+        device->CreateSamplerState(&samplerDesc, &samplerState);
+    }
+    
     if (path != "") {
         MeshData mesh = ModelLoader::LoadModel(path, color);
         vertices = mesh.vertices;
@@ -167,7 +188,7 @@ void StickyObject::Initialize(const std::string& path, const DirectX::XMFLOAT4& 
         {"COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16,  D3D11_INPUT_PER_VERTEX_DATA, 0},
     };
 
-    device->CreateInputLayout(layoutDesc, 2, vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &inputLayout);
+    device->CreateInputLayout(layoutDesc, 3, vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &inputLayout);
 
     D3D11_BUFFER_DESC constBufDesc = {};
     constBufDesc.Usage = D3D11_USAGE_DYNAMIC;
@@ -184,7 +205,7 @@ void StickyObject::Initialize(const std::string& path, const DirectX::XMFLOAT4& 
 }
 
 void StickyObject::Draw() {
-    UINT stride = sizeof(XMFLOAT4) * 2;
+    UINT stride = sizeof(Vertex);
     UINT offset = 0;
 
     context->IASetInputLayout(inputLayout);
@@ -217,7 +238,7 @@ void StickyObject::Update(const Vector3& ballCenter, float ballRadius, Vector3 r
 
     worldMatrix = scale * rotationA * rotationB * translation;
 
-    Matrix transposed = worldMatrix.Transpose(); // GPU ожидает транспонированную
+    Matrix transposed = worldMatrix.Transpose();
 
     D3D11_MAPPED_SUBRESOURCE mapped = {};
     context->Map(transformBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);

@@ -1,6 +1,6 @@
 #pragma once
 #include <DirectXTex.h>
-#include <WICTextureLoader.h>
+#include <DDSTextureLoader.h>
 
 #include <d3d11.h>
 #include <directxtk/SimpleMath.h>
@@ -27,6 +27,12 @@ private:
     ID3D11VertexShader* vertexShader = nullptr;
     ID3D11PixelShader* pixelShader = nullptr;
     ID3D11InputLayout* inputLayout = nullptr;
+
+    ID3D11ShaderResourceView* textureView = nullptr;
+    ID3D11Resource* texture = nullptr;
+    ID3D11SamplerState* samplerState = nullptr;
+    bool useTexture = false;
+
 
     ID3D11Buffer* transformBuffer = nullptr;
 

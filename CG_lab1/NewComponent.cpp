@@ -34,12 +34,12 @@ void NewComponent::Initialize() {
 
             // Было: 0-1-2 стало: 0-2-1
             indeces.push_back(first);
-            indeces.push_back(first + 1);  // <- Меняем порядок
+            indeces.push_back(first + 1);
             indeces.push_back(second);
 
             // Было: 2-3-1 стало: 2-1-3
             indeces.push_back(second);
-            indeces.push_back(first + 1);  // <- Меняем порядок
+            indeces.push_back(first + 1);
             indeces.push_back(second + 1);
         }
     }
@@ -105,7 +105,7 @@ void NewComponent::Initialize() {
 
     device->CreateInputLayout(
         inputElements,
-        2,
+        3,
         vertexBC->GetBufferPointer(),
         vertexBC->GetBufferSize(),
         &layout);
@@ -116,7 +116,7 @@ void NewComponent::Initialize() {
     vertexBufDesc.CPUAccessFlags = 0;
     vertexBufDesc.MiscFlags = 0;
     vertexBufDesc.StructureByteStride = 0;
-    vertexBufDesc.ByteWidth = sizeof(DirectX::XMFLOAT4) * points.size();
+    vertexBufDesc.ByteWidth = sizeof(VertexData) * points.size();
 
     D3D11_BUFFER_DESC constBufDesc = {};
     constBufDesc.Usage = D3D11_USAGE_DYNAMIC;
@@ -152,7 +152,7 @@ void NewComponent::Initialize() {
 }
 
 void NewComponent::Draw() {
-    UINT strides[] = { 32 };
+    UINT strides[] = { sizeof(VertexData)};
     UINT offsets[] = { 0 };
     context->VSSetConstantBuffers(0, 1, &cb);
     context->IASetInputLayout(layout);
