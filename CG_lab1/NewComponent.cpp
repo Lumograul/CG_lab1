@@ -121,7 +121,7 @@ void NewComponent::Initialize() {
     vertexBufDesc.CPUAccessFlags = 0;
     vertexBufDesc.MiscFlags = 0;
     vertexBufDesc.StructureByteStride = 0;
-    vertexBufDesc.ByteWidth = sizeof(DirectX::XMFLOAT4) * points.size();
+    vertexBufDesc.ByteWidth = sizeof(VertexData) * points.size();
 
     D3D11_BUFFER_DESC constBufDesc = {};
     constBufDesc.Usage = D3D11_USAGE_DYNAMIC;
@@ -157,7 +157,7 @@ void NewComponent::Initialize() {
 }
 
 void NewComponent::Draw() {
-    UINT strides[] = { 32 };
+    UINT strides[] = { sizeof(VertexData)};
     UINT offsets[] = { 0 };
     struct TextureFlags { int usTexture = 0; float padding[3]; } flags;
     ID3D11Buffer* flagBuffer = CreateFlagBuffer(device, &flags, sizeof(flags));

@@ -87,12 +87,16 @@ StickyObject::~StickyObject() {
 }
 
 void StickyObject::Initialize(const std::string& path, const std::string& texturePath, const DirectX::XMFLOAT4& color) {
+    CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+
     if (!texturePath.empty()) {
-        DirectX::CreateWICTextureFromFile(
+        HRESULT result = DirectX::CreateDDSTextureFromFile(
             device,
             std::wstring(texturePath.begin(), texturePath.end()).c_str(),
-            nullptr, &textureView
+            &texture, 
+            &textureView
         );
+
         useTexture = true;
 
         // Создаем сэмплер
@@ -201,7 +205,7 @@ void StickyObject::Initialize(const std::string& path, const std::string& textur
 }
 
 void StickyObject::Draw() {
-    UINT stride = sizeof(XMFLOAT4) * 2;
+    UINT stride = sizeof(Vertex);
     UINT offset = 0;
 
     if (useTexture) {

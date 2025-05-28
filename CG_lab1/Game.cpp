@@ -216,7 +216,7 @@ void Game::Initialize() {
     
 
     std::string path = "./chest/teasure_chest.obj";
-    std::string pathMtl = "./chest/teasure_chest.mtl";
+    std::string pathMtl = "./chest/teasure_chest.dds";
 
     std::string path2 = "./fox/source/LowPolyAnimal.obj";
     std::string path3 = "./candy-shop/source/Candy_shop.obj";
