@@ -28,11 +28,6 @@ private:
     ID3D11PixelShader* pixelShader = nullptr;
     ID3D11InputLayout* inputLayout = nullptr;
 
-    ID3D11ShaderResourceView* textureView = nullptr;
-    ID3D11SamplerState* samplerState = nullptr;
-    bool useTexture = false;
-
-
     ID3D11Buffer* transformBuffer = nullptr;
 
     DirectX::SimpleMath::Matrix worldMatrix;
@@ -56,10 +51,10 @@ public:
     DirectX::SimpleMath::Vector3 attachedOffset = { 0.0f, 0.f, 0.0f };
     InputDevice* inpDevice;
 
-    StickyObject(ID3D11Device* device, ID3D11DeviceContext* context, const DirectX::SimpleMath::Vector3 startCoords, InputDevice* inputDevice, const std::string& path = "", const std::string& texturePath = "", const DirectX::XMFLOAT4& color = { 1.0f, 1.0f, 1.0f, 1.0f });
+    StickyObject(ID3D11Device* device, ID3D11DeviceContext* context, const DirectX::SimpleMath::Vector3 startCoords, InputDevice* inputDevice, const std::string& path = "", const DirectX::XMFLOAT4& color = { 1.0f, 1.0f, 1.0f, 1.0f });
     ~StickyObject();
 
-    void Initialize(const std::string& path = "", const std::string& texturePath = "", const DirectX::XMFLOAT4& color = { 1.0f, 1.0f, 1.0f, 1.0f });
+    void Initialize(const std::string& path = "", const DirectX::XMFLOAT4& color = { 1.0f, 1.0f, 1.0f, 1.0f });
     void Draw();
     void Update(const DirectX::SimpleMath::Vector3& ballCenter, float ballRadius, const DirectX::SimpleMath::Vector3 rotationAxis, float angle);
     void Attach(const DirectX::SimpleMath::Vector3& ballCenter, float ballRadius, float ballAngle, const DirectX::SimpleMath::Vector3 ballRotAxis);

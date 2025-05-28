@@ -21,11 +21,8 @@ void NewComponent::Initialize() {
             float y = radius * cosf(phi);
             float z = radius * sinf(phi) * sinf(theta);
 
-            points.push_back({
-                { x, y, z, 1.0f },
-                { 0.0f, a, 0.0f, 1.0f },
-                { 0.0f, 0.0f }
-                });
+            points.push_back({ x, y, z, 1.0f });
+            points.push_back({ 0.0f, a, 0.0f, 1.0f });
         }
         a += 1.0f / stacks;
     }
@@ -102,9 +99,7 @@ void NewComponent::Initialize() {
             0,
             D3D11_APPEND_ALIGNED_ELEMENT,
             D3D11_INPUT_PER_VERTEX_DATA,
-            0}, 
-        D3D11_INPUT_ELEMENT_DESC 
-        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0}
+            0}
     };
 
 
@@ -159,9 +154,6 @@ void NewComponent::Initialize() {
 void NewComponent::Draw() {
     UINT strides[] = { 32 };
     UINT offsets[] = { 0 };
-    struct TextureFlags { int usTexture = 0; float padding[3]; } flags;
-    ID3D11Buffer* flagBuffer = CreateFlagBuffer(device, &flags, sizeof(flags));
-    context->PSSetConstantBuffers(2, 1, &flagBuffer);
     context->VSSetConstantBuffers(0, 1, &cb);
     context->IASetInputLayout(layout);
     context->IASetIndexBuffer(ib, DXGI_FORMAT_R32_UINT, 0);
@@ -169,7 +161,6 @@ void NewComponent::Draw() {
     context->VSSetShader(vertexShader, nullptr, 0);
     context->PSSetShader(pixelShader, nullptr, 0);
     context->DrawIndexed(indeces.size(), 0, 0);
-
 }
 
 
@@ -182,8 +173,8 @@ void NewComponent::Update(Vector3 cameraForward, Vector3 cameraPosition, float s
         transl.z = cameraForward.z;
         angle += DirectX::XMConvertToRadians(5.0f);
     }
-    
-    /*transl 
+
+    /*transl
     cameraPosition*/
     Vector3 direction = transl - cameraPosition;
     // 2. Строим нормаль плоскости (перпендикулярно вектору направления и оси Y)
@@ -202,7 +193,7 @@ void NewComponent::Update(Vector3 cameraForward, Vector3 cameraPosition, float s
     Matrix translM = Matrix::CreateTranslation(transl);
 
     transformationMatrix = (scaleM * rotatM * translM).Transpose();
-    
+
     context->Map(cb, 0, D3D11_MAP_WRITE_DISCARD, 0, &res);
 
     auto dataPtr = reinterpret_cast<Matrix*>(res.pData);
@@ -216,7 +207,7 @@ void NewComponent::DestroyResources() {
     if (vertexShader) vertexShader->Release();
     if (pixelShader) pixelShader->Release();
     if (layout) layout->Release();
-}   
+}
 
 DirectX::BoundingSphere NewComponent::GetBoundingSphere() const {
     using namespace DirectX::SimpleMath;

@@ -1,26 +1,13 @@
-// Добавляем текстуру и сэмплер
-Texture2D objTexture : register(t0);
-SamplerState objSampler : register(s0);
-
-// Флаг использования текстуры
-cbuffer TextureFlags : register(b2)
-{
-    bool useTexture;
-    float3 padding; // Для выравнивания
-};
-
 struct VS_IN
 {
-    float4 pos : POSITION;
-    float4 col : COLOR;
-    float2 tex : TEXCOORD0; // Добавляем текстурные координаты
+    float4 pos : POSITION0;
+    float4 col : COLOR0;
 };
 
 struct PS_IN
 {
     float4 pos : SV_POSITION;
     float4 col : COLOR;
-    float2 tex : TEXCOORD0; // Передаем в пиксельный шейдер
 };
 
 cbuffer ObjectBuffer : register(b0)
@@ -35,23 +22,17 @@ cbuffer CameraBuffer : register(b1)
 
 PS_IN VSMain(VS_IN input)
 {
-    PS_IN output;
-    output.pos = mul(mul(input.pos, transformationMatrix), viewProjection);
+    PS_IN output = (PS_IN) 0;
+    
+    float4 worldPos = mul(input.pos, transformationMatrix);
+    output.pos = mul(worldPos, viewProjection);
     output.col = input.col;
-    output.tex = input.tex; // Передаем текстурные координаты
+
     return output;
 }
 
-float4 PSMain(PS_IN input) : SV_TARGET
+float4 PSMain(PS_IN input) : SV_Target
 {
-    return input.col;
-
-    if (useTexture)
-    {
-        return objTexture.Sample(objSampler, input.tex);
-    }
-    else
-    {
-        return input.col;
-    }
+    float4 col = input.col;
+    return col;
 }

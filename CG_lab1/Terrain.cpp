@@ -1,7 +1,7 @@
+
 #include "Terrain.h"
 #include <d3dcompiler.h>
 #include <algorithm>
-
 
 Terrain::Terrain(ID3D11Device* device, ID3D11DeviceContext* context, float width, float depth, int gridSize)
     : device(device), context(context), width(width), depth(depth), gridSize(gridSize)
@@ -40,8 +40,7 @@ void Terrain::Initialize() {
 
             vertices.push_back({
                 XMFLOAT3(xPos, yPos, zPos),
-                color,
-                { 0.0f, 0.0f }
+                color
                 });
         }
     }
@@ -116,8 +115,7 @@ void Terrain::CreateShaders() {
     // Создание input layout
     D3D11_INPUT_ELEMENT_DESC layout[] = {
         {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 } 
+        {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
     };
 
     device->CreateInputLayout(
@@ -181,9 +179,7 @@ void Terrain::Render() {
 
     context->VSSetShader(vertexShader, nullptr, 0);
     context->VSSetConstantBuffers(0, 1, &transformBuffer);
-    struct TextureFlags { int usTexture = 0; float padding[3]; } flags;
-    ID3D11Buffer* flagBuffer = CreateFlagBuffer(device, &flags, sizeof(flags));
-    context->PSSetConstantBuffers(2, 1, &flagBuffer);
+
     context->PSSetShader(pixelShader, nullptr, 0);
 
     context->DrawIndexed(indices.size(), 0, 0);
