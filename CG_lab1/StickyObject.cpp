@@ -184,7 +184,7 @@ void StickyObject::Initialize(const std::string& path, const std::string& textur
         {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0},
     };
 
-    device->CreateInputLayout(layoutDesc, 2, vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &inputLayout);
+    device->CreateInputLayout(layoutDesc, 3, vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &inputLayout);
 
     D3D11_BUFFER_DESC constBufDesc = {};
     constBufDesc.Usage = D3D11_USAGE_DYNAMIC;

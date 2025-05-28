@@ -110,7 +110,7 @@ void NewComponent::Initialize() {
 
     device->CreateInputLayout(
         inputElements,
-        2,
+        3,
         vertexBC->GetBufferPointer(),
         vertexBC->GetBufferSize(),
         &layout);
@@ -169,7 +169,6 @@ void NewComponent::Draw() {
     context->VSSetShader(vertexShader, nullptr, 0);
     context->PSSetShader(pixelShader, nullptr, 0);
     context->DrawIndexed(indeces.size(), 0, 0);
-
 }
 
 

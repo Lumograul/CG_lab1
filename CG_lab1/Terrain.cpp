@@ -122,7 +122,7 @@ void Terrain::CreateShaders() {
 
     device->CreateInputLayout(
         layout,
-        2,
+        3,
         vsBlob->GetBufferPointer(),
         vsBlob->GetBufferSize(),
         &inputLayout
