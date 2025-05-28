@@ -39,7 +39,7 @@ void Terrain::Initialize() {
             color.w = 1.0f;
 
             vertices.push_back({
-                XMFLOAT4(xPos, yPos, zPos, 1.0f),
+                XMFLOAT3(xPos, yPos, zPos),
                 color,
                 { 0.0f, 0.0f }
                 });

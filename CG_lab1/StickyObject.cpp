@@ -243,7 +243,7 @@ void StickyObject::Update(const Vector3& ballCenter, float ballRadius, Vector3 r
 
     worldMatrix = scale * rotationA * rotationB * translation;
 
-    Matrix transposed = worldMatrix.Transpose(); // GPU ожидает транспонированную
+    Matrix transposed = worldMatrix.Transpose();
 
     D3D11_MAPPED_SUBRESOURCE mapped = {};
     context->Map(transformBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
