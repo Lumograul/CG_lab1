@@ -1,4 +1,3 @@
-
 #pragma once
 #include <d3d.h>
 #include <d3d11.h>
@@ -14,6 +13,23 @@
 #include "Camera.h"
 #include "StickyObject.h"
 
+struct VertexData {
+    DirectX::XMFLOAT4 position;
+    DirectX::XMFLOAT4 color;
+    DirectX::XMFLOAT2 texCoord;
+};
+
+inline ID3D11Buffer* CreateFlagBuffer(ID3D11Device* device, const void* data, size_t size) {
+    D3D11_BUFFER_DESC desc = {};
+    desc.ByteWidth = static_cast<UINT>(size);
+    desc.Usage = D3D11_USAGE_DEFAULT;
+    desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+
+    D3D11_SUBRESOURCE_DATA initData = { data };
+    ID3D11Buffer* buffer;
+    device->CreateBuffer(&desc, &initData, &buffer);
+    return buffer;
+}
 
 class NewComponent {
 private:
@@ -24,7 +40,7 @@ private:
 public:
     float angle = 0;
 
-    std::vector<DirectX::XMFLOAT4> points;
+    std::vector<VertexData> points;
     ID3D11InputLayout* layout;
     ID3D11Buffer* vb;
     ID3D11Buffer* ib;
