@@ -1,0 +1,55 @@
+struct VS_IN
+{
+    float4 pos : POSITION0;
+<<<<<<< HEAD
+    float4 col : COLOR0;
+=======
+    float4 col : COLOR;
+    float2 tex : TEXCOORD0; // Добавляем текстурные координаты
+>>>>>>> Textures
+};
+
+struct PS_IN
+{
+    float4 pos : SV_POSITION;
+    float4 col : COLOR;
+};
+
+cbuffer ObjectBuffer : register(b0)
+{
+    float4x4 transformationMatrix;
+};
+
+cbuffer CameraBuffer : register(b1)
+{
+    float4x4 viewProjection;
+};
+
+PS_IN VSMain(VS_IN input)
+{
+    PS_IN output = (PS_IN) 0;
+    
+    float4 worldPos = mul(input.pos, transformationMatrix);
+    output.pos = mul(worldPos, viewProjection);
+    output.col = input.col;
+
+    return output;
+}
+
+float4 PSMain(PS_IN input) : SV_Target
+{
+<<<<<<< HEAD
+    float4 col = input.col;
+    return col;
+}
+=======
+    if (useTexture)
+    {
+        return objTexture.Sample(objSampler, input.tex);
+    }
+    else
+    {
+        return input.col;
+    }
+}
+>>>>>>> Textures
