@@ -1,8 +1,8 @@
-
 #pragma once
 #include <d3d11.h>
 #include <DirectXMath.h>
 #include <vector>
+#include "NewComponent.h"
 
 using namespace DirectX;
 
@@ -13,6 +13,7 @@ public:
     struct Vertex {
         XMFLOAT3 pos;
         XMFLOAT4 col;
+        XMFLOAT2 texCoord;
     };
 
     Terrain(ID3D11Device* device, ID3D11DeviceContext* context, float width, float depth, int gridSize);
