@@ -213,7 +213,7 @@ void Game::Initialize() {
 
     camera = new Camera(device.Get(), context);
     terrain = new Terrain(device.Get(), context, 100.0f, 100.0f, 200);
-    
+
 
     std::string path = "./chest/teasure_chest.obj";
     std::string pathMtl = "./chest/teasure_chest.dds";
@@ -230,10 +230,10 @@ void Game::Initialize() {
     ball = new NewComponent(device.Get(), context, inpDevice, { 1.0f, 0.0f, 0.0f }, { 0.0f,1.0f,0.0f }, 0.0f);
     ball->Initialize();
 
-   /* grid = new Grid(device.Get(), context, 50.0f, 100);
-    grid->Initialize();*/
+    /* grid = new Grid(device.Get(), context, 50.0f, 100);
+     grid->Initialize();*/
 
-    
+
     CD3D11_RASTERIZER_DESC rastDesc = {};
     rastDesc.CullMode = D3D11_CULL_FRONT;
     rastDesc.FillMode = D3D11_FILL_SOLID;
@@ -593,7 +593,7 @@ std::vector<int> Game::GenerateCircleIndeces() {
     indeces.emplace_back(0);
     indeces.emplace_back(numPoints);
     indeces.emplace_back(1);
-    
+
     return indeces;
 }
 
