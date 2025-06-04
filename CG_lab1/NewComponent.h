@@ -8,15 +8,37 @@
 #include <directxtk/SimpleMath.h>
 #include <limits>
 #include <algorithm>
-#include<iostream>
+#include <iostream>
 #include "InputDevice.h"
 #include "Camera.h"
-#include "StickyObject.h"
 
 struct VertexData {
     DirectX::XMFLOAT4 position;
     DirectX::XMFLOAT4 color;
     DirectX::XMFLOAT2 texCoord;
+    DirectX::XMFLOAT3 normal;
+};
+
+
+
+struct DirectionalLight {
+    DirectX::SimpleMath::Vector4 ambient;
+    DirectX::SimpleMath::Vector4 diffuse;
+    DirectX::SimpleMath::Vector4 specular;
+    DirectX::SimpleMath::Vector4 direction;
+};
+
+struct Material {
+    DirectX::SimpleMath::Vector4 ambient;
+    DirectX::SimpleMath::Vector4 diffuse;
+    DirectX::SimpleMath::Vector4 specular;
+};
+
+struct LightData {
+    Material material;
+    DirectionalLight directional;
+    DirectX::SimpleMath::Vector4 camera;
+    DirectX::SimpleMath::Matrix lightSpace;
 };
 
 inline ID3D11Buffer* CreateFlagBuffer(ID3D11Device* device, const void* data, size_t size) {
@@ -40,11 +62,13 @@ private:
 public:
     float angle = 0;
 
+    LightData lightData;
     std::vector<VertexData> points; 
     ID3D11InputLayout* layout;
     ID3D11Buffer* vb;
     ID3D11Buffer* ib;
     ID3D11Buffer* cb;
+    ID3D11Buffer* lightBuffer;
     ID3D11VertexShader* vertexShader;
     ID3D11PixelShader* pixelShader;
     DirectX::SimpleMath::Matrix transformationMatrix;
@@ -56,6 +80,19 @@ public:
     InputDevice* inpDevice;
     //std::vector<StickyObject> stickers;
     bool PPressedLastFrame{ false };
+
+    DirectionalLight dirLight = {
+        DirectX::SimpleMath::Vector4(0.9f, 0.9f, 0.9f, 1.0f),
+        DirectX::SimpleMath::Vector4(1.0f, 1.1f, 1.1f, 1.0f),
+        DirectX::SimpleMath::Vector4(0.1f, 0.1f, 0.1f, 1.0f),
+        DirectX::SimpleMath::Vector4(0.0f, -1.0f, 1.0f, 1.0f)
+    };
+
+    Material material = {
+        DirectX::SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f),
+        DirectX::SimpleMath::Vector4(0.2f, 0.2f, 0.2f, 1.0f),
+        DirectX::SimpleMath::Vector4(0.55f, 0.55f, 0.55f, 1.0f)
+    };
 
     NewComponent(
         ID3D11Device* dev,
@@ -70,6 +107,7 @@ public:
         vb(nullptr),
         ib(nullptr),
         cb(nullptr),
+        lightBuffer(nullptr),
         vertexShader(nullptr),
         pixelShader(nullptr),
         layout(nullptr),
@@ -81,8 +119,31 @@ public:
     }
     void Initialize() ;
     void Draw() ;
-    void Update(DirectX::SimpleMath::Vector3 cameraForward, DirectX::SimpleMath::Vector3 cameraPosition, float surfaceHeight) ;
+    void Update(DirectX::SimpleMath::Vector3 cameraForward, DirectX::SimpleMath::Vector3 cameraPosition, float surfaceHeight, DirectX::SimpleMath::Matrix lightViewProjection) ;
     void DestroyResources() ;
 
     DirectX::BoundingSphere GetBoundingSphere() const;
+
+
+    struct ShadowBuffData {
+        DirectX::SimpleMath::Matrix transform;
+        DirectX::SimpleMath::Matrix viewProjection;
+        DirectX::SimpleMath::Vector4 color;
+    };
+
+    ShadowBuffData shadowBuffData;
+
+    ID3D11Buffer* shadowBuff;
+    ID3D11ShaderResourceView* shadowsResource;
+    ID3D11SamplerState* shadowSampler;
+
+    ID3D11RasterizerState* rastState_shadows;
+    ID3D11VertexShader* vertexShader_shadows;
+    ID3DBlob* vertexByteCode_shadows;
+
+    ID3D11PixelShader* pixelShader_shadows;
+    ID3DBlob* pixelByteCode_shadows;
+    void CreateShadowShaders();
+    void LightRender();
+    void LightUpdate(DirectX::SimpleMath::Matrix lightViewProjection);
 };

@@ -54,6 +54,9 @@
     <ClCompile Include="ModelLoader.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="Shadow.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\MyVeryFirstShader.hlsl" />
@@ -96,6 +99,12 @@
       <Filter>Исходные файлы</Filter>
     </ClInclude>
     <ClInclude Include="ModelLoader.h">
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="LightHelper.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="Shadow.h">
       <Filter>Исходные файлы</Filter>
     </ClInclude>
   </ItemGroup>

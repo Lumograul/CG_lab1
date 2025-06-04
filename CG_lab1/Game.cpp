@@ -66,6 +66,9 @@ void Game::Initialize() {
     device->CreateDepthStencilView(depthStencilTexture, &dsvDesc, &dsv);
 
 
+    dirLightShadows = new Shadow();
+    dirLightShadows->Initialize(device, 512, 512);
+
 #pragma region Pong
     //std::vector<int> indeces = { 0,1,2, 1,0,3 };
 
@@ -213,27 +216,32 @@ void Game::Initialize() {
 
     camera = new Camera(device.Get(), context);
     terrain = new Terrain(device.Get(), context, 100.0f, 100.0f, 200);
-    
+
 
     std::string path = "./chest/teasure_chest.obj";
-    std::string pathMtl = "./chest/teasure_chest.dds";
+    std::string pathMtl = "./chest/teasure.dds";
 
     std::string path2 = "./fox/source/LowPolyAnimal.obj";
     std::string path3 = "./candy-shop/source/Candy_shop.obj";
 
 
     //stickers.push_back(new StickyObject(device.Get(), context, { -10.0f, terrain->GetHeightAt(5.0f, 0.0f) + 0.3f, 0.0f }, inpDevice));
-    stickers.push_back(new StickyObject(device.Get(), context, { -5.f, terrain->GetHeightAt(5.0f, 0.0f) + 0.3f, 0.0f }, inpDevice, path, pathMtl));
+    stickers.push_back(new StickyObject(device.Get(), context, { -5.f, terrain->GetHeightAt(5.0f, 0.0f) - 0.3f, 0.0f }, inpDevice, path, pathMtl));
     //stickers.push_back(new StickyObject(device.Get(), context, { -7.5f, terrain->GetHeightAt(5.0f, 0.0f) + 0.3f, 0.0f }, inpDevice));
 
 
     ball = new NewComponent(device.Get(), context, inpDevice, { 1.0f, 0.0f, 0.0f }, { 0.0f,1.0f,0.0f }, 0.0f);
     ball->Initialize();
 
-   /* grid = new Grid(device.Get(), context, 50.0f, 100);
-    grid->Initialize();*/
+    /* grid = new Grid(device.Get(), context, 50.0f, 100);
+     grid->Initialize();*/
 
-    
+    ball->CreateShadowShaders();
+    terrain->CreateShadowShaders();
+    for (auto& sticky : stickers) {
+        sticky->CreateShadowShaders();
+    }
+
     CD3D11_RASTERIZER_DESC rastDesc = {};
     rastDesc.CullMode = D3D11_CULL_FRONT;
     rastDesc.FillMode = D3D11_FILL_SOLID;
@@ -256,7 +264,8 @@ void Game::Run() {
             DispatchMessage(&msg);
         }
         if (msg.message == WM_QUIT) isExitRequested = true;
-
+        UpdateLight();
+        RenderShadowMap();
         context->ClearState();
         context->RSSetState(rastState);
 
@@ -278,7 +287,6 @@ void Game::Run() {
         context->RSSetScissorRects(1, &scizors);
         context->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-        context->OMSetRenderTargets(1, &rtv, dsv);
 
         /*auto	curTime = std::chrono::steady_clock::now();
         float	deltaTime = std::chrono::duration_cast<std::chrono::microseconds>(curTime - PrevTime).count() / 1000000.0f;
@@ -301,10 +309,13 @@ void Game::Run() {
 
         //float color[] = { totalTime, 0.1f, 0.1f, 1.0f };
         float color[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+
+
+
+        
+        context->OMSetRenderTargets(1, &rtv, dsv);
         context->ClearRenderTargetView(rtv, color);
         context->ClearDepthStencilView(dsv, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-
-
 #pragma region Pong
         //components[0]->Draw();
         //components[1]->Draw();
@@ -508,9 +519,9 @@ void Game::Run() {
 
         //}
 #pragma endregion Pong
-        camera->Update();
 
         camera->Draw();
+        camera->Update();
 
 
         for (auto& sticky : stickers) {
@@ -520,21 +531,22 @@ void Game::Run() {
         ball->Draw();
         //components[1]->Draw();
         //grid->Render(); 
-        terrain->Render();
+        terrain->Render(camera->GetCamPos());
 
         for (auto& sticky : stickers) {
             sticky->Update(
                 ball->transl,
                 1.0f,
                 ball->rotationAxis,
-                ball->angle
+                ball->angle,
+                camera->GetCamPos()
             );;
         }
 
         context->OMSetRenderTargets(0, nullptr, nullptr);
 
         float currentHeight = terrain->GetHeightAt(ball->transl.x, ball->transl.z);
-        ball->Update(camera->GetForwardDirection(), camera->GetCamPos(), currentHeight);
+        ball->Update(camera->GetForwardDirection(), camera->GetCamPos(), currentHeight, lightView * lightProjection);
         //components[1]->Update();
 
         auto ballSphere = ball->GetBoundingSphere();
@@ -593,7 +605,7 @@ std::vector<int> Game::GenerateCircleIndeces() {
     indeces.emplace_back(0);
     indeces.emplace_back(numPoints);
     indeces.emplace_back(1);
-    
+
     return indeces;
 }
 
@@ -625,3 +637,30 @@ RectF GetRectangleProperties(const std::vector<DirectX::XMFLOAT4>& points) {
     return { minX, maxY, maxX - minX, maxY - minY };
 }
 
+
+void Game::UpdateLight()
+{
+    DirectX::SimpleMath::Vector3 sceneCenter(0.0f, 0.0f, 0.0f);
+    DirectX::SimpleMath::Vector3 lightCameraPos = sceneCenter - DirectX::SimpleMath::Vector4(1.0f, 1.0f, 0.0f, 1.0f) * 25.0f;
+
+    lightView = DirectX::SimpleMath::Matrix::CreateLookAt(lightCameraPos, sceneCenter, DirectX::SimpleMath::Vector3::Up).Transpose();
+    lightProjection = DirectX::SimpleMath::Matrix::CreateOrthographic(64, 64, 0.1f, 100.0f).Transpose();
+}
+
+void Game::RenderShadowMap()
+{
+    dirLightShadows->SetRenderTarget(context);
+    dirLightShadows->ClearRenderTarget(context, DirectX::SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 1.0f));
+
+    ball->LightUpdate(lightView * lightProjection);
+    ball->LightRender();
+
+    terrain->LightUpdate(lightView * lightProjection);
+    terrain->LightRender();
+
+    for (auto& sticky : stickers) {
+        sticky->LightUpdate(lightView * lightProjection);
+        sticky->LightRender();
+    }
+
+}

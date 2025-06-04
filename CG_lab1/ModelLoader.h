@@ -10,6 +10,8 @@ struct Vertex {
     DirectX::XMFLOAT4 position;
     DirectX::XMFLOAT4 color; // Если нужно цвет извне
     DirectX::XMFLOAT2 texCoord;
+    DirectX::XMFLOAT3 normal;
+
 };
 struct MeshData {
     std::vector<Vertex> vertices;
@@ -23,6 +25,7 @@ public:
         std::string line;
         std::vector<DirectX::XMFLOAT4> tempPositions;
         std::vector<DirectX::XMFLOAT2> tempTexCoords;
+        std::vector<DirectX::XMFLOAT3> tempNormals;
 
         while (std::getline(file, line)) {
             std::istringstream iss(line);
@@ -37,7 +40,12 @@ public:
             else if (type == "vt") {
                 float u, v;
                 iss >> u >> v;
-                tempTexCoords.emplace_back(u, v);
+                tempTexCoords.emplace_back(u, -v);
+            }
+            else if (type == "vn") {
+                float nx, ny, nz;
+                iss >> nx >> ny >> nz;
+                tempNormals.emplace_back(nx, ny, nz);
             }
             else if (type == "f") {
                 std::vector<std::string> faceVertices;
@@ -71,6 +79,8 @@ public:
                         vert.position = tempPositions[vIdx];
                         vert.color = color;
                         vert.texCoord = (vtIdx != -1) ? tempTexCoords[vtIdx] : DirectX::XMFLOAT2(0, 0);
+                        vert.normal = (vnIdx != -1) ? tempNormals[vnIdx] : DirectX::XMFLOAT3(0, 0, 0);
+
                         mesh.vertices.push_back(vert);
                         mesh.indices.push_back(static_cast<uint32_t>(mesh.vertices.size() - 1));
                     }
@@ -86,6 +96,8 @@ public:
                             vert.position = tempPositions[vIdx];
                             vert.color = color;
                             vert.texCoord = (vtIdx != -1) ? tempTexCoords[vtIdx] : DirectX::XMFLOAT2(0, 0);
+                            vert.normal = (vnIdx != -1) ? tempNormals[vnIdx] : DirectX::XMFLOAT3(0, 0, 0);
+
                             mesh.vertices.push_back(vert);
                             mesh.indices.push_back(static_cast<uint32_t>(mesh.vertices.size() - 1));
                         }

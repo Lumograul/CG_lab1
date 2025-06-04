@@ -18,6 +18,7 @@
 #include "CentralComponent.h"
 #include "StickyObject.h"
 #include "Terrain.h"
+#include "Shadow.h"
 
 class Game {
 private:
@@ -66,5 +67,11 @@ public:
     std::vector<DirectX::XMFLOAT4> GenerateCirclePoints(float cx, float cy, float r);
     std::vector<int> GenerateCircleIndeces();
     DirectX::SimpleMath::Vector2 GenerateRandomBallDirection();
+
+    DirectX::SimpleMath::Matrix lightView;
+    DirectX::SimpleMath::Matrix lightProjection;
+    Shadow* dirLightShadows;
+    void UpdateLight();
+    void RenderShadowMap();
 
 };

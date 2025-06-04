@@ -112,7 +112,6 @@ void StickyObject::Initialize(const std::string& path, const std::string& textur
         MeshData mesh = ModelLoader::LoadModel(path, color);
         vertices = mesh.vertices;
         indices = mesh.indices;
-        printf("%f, %f, %f\n", vertices[0].position.x, vertices[0].position.y, vertices[0].position.z);
     }
     else {
         float s = 0.25f; // половина длины стороны (0.5 / 2)
@@ -186,9 +185,10 @@ void StickyObject::Initialize(const std::string& path, const std::string& textur
         {"POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0},
         {"COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0},
         {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        { "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT,    0, offsetof(VertexData, normal),    D3D11_INPUT_PER_VERTEX_DATA, 0 },
     };
 
-    device->CreateInputLayout(layoutDesc, 3, vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &inputLayout);
+    device->CreateInputLayout(layoutDesc, 4, vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &inputLayout);
 
     D3D11_BUFFER_DESC constBufDesc = {};
     constBufDesc.Usage = D3D11_USAGE_DYNAMIC;
@@ -199,6 +199,19 @@ void StickyObject::Initialize(const std::string& path, const std::string& textur
     constBufDesc.ByteWidth = sizeof(Matrix);
 
     device->CreateBuffer(&constBufDesc, nullptr, &transformBuffer);
+
+    //Constant buffers: light
+    D3D11_BUFFER_DESC lightBufferDesc = {};
+    lightBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+    lightBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    lightBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    lightBufferDesc.MiscFlags = 0;
+    lightBufferDesc.StructureByteStride = 0;
+    lightBufferDesc.ByteWidth = sizeof(LightData);
+
+    device->CreateBuffer(&lightBufferDesc, nullptr, &lightBuffer);
+
+    lightData = {};
 
     vsBlob->Release();
     psBlob->Release();
@@ -224,11 +237,12 @@ void StickyObject::Draw() {
     context->PSSetConstantBuffers(2, 1, &flagBuffer);
     context->VSSetShader(vertexShader, nullptr, 0);
     context->PSSetShader(pixelShader, nullptr, 0);
+    context->PSSetConstantBuffers(3, 1, &lightBuffer);
 
     context->DrawIndexed(indices.size(), 0, 0);
 }
 
-void StickyObject::Update(const Vector3& ballCenter, float ballRadius, Vector3 rotationAxis, float angle) {
+void StickyObject::Update(const Vector3& ballCenter, float ballRadius, Vector3 rotationAxis, float angle, DirectX::SimpleMath::Vector3 camPos) {
     if (mode == Mode::Attached) {
         Vector3 rotatedPos = RotateVector(startAttachmentCoords, startAttachmentRotationAxis, angle - startAttachmentBallAngle);
         Vector3 direction = rotationAxis.Cross(Vector3::Up);
@@ -255,6 +269,15 @@ void StickyObject::Update(const Vector3& ballCenter, float ballRadius, Vector3 r
 
     memcpy(dataPtr, &transposed, sizeof(Matrix));
     context->Unmap(transformBuffer, 0);
+
+    lightData.directional = dirLight;
+    lightData.material = material;
+    lightData.camera = { camPos.x, camPos.y, camPos.z, 1.0f };
+
+    D3D11_MAPPED_SUBRESOURCE resLight = {};
+    context->Map(lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resLight);
+    memcpy(resLight.pData, &lightData, sizeof(LightData));
+    context->Unmap(lightBuffer, 0);
 
 }
 
@@ -285,4 +308,107 @@ void StickyObject::Attach(const Vector3& ballCenter, float ballRadius, float bal
     startAttachmentBallAngle = ballAngle;
     startAttachmentRotationAxis = ballRotAxis;
     coords = startCoords;
+}
+
+
+
+void StickyObject::CreateShadowShaders()
+{
+    ID3DBlob* errorVertexCode = nullptr;
+    HRESULT res = D3DCompileFromFile(L"./Shaders/MyVeryFirstShader.hlsl",
+        nullptr /*macros*/,
+        nullptr /*include*/,
+        "VSMain",
+        "vs_5_0",
+        D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
+        0,
+        &vertexByteCode_shadows,
+        &errorVertexCode);
+    device->CreateVertexShader(
+        vertexByteCode_shadows->GetBufferPointer(),
+        vertexByteCode_shadows->GetBufferSize(),
+        nullptr, &vertexShader_shadows);
+
+
+    ID3DBlob* errorPixelCode = nullptr;
+    res = D3DCompileFromFile(L"./Shaders/MyVeryFirstShader.hlsl",
+        nullptr /*macros*/,
+        nullptr /*include*/,
+        "PSMain",
+        "ps_5_0",
+        D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
+        0,
+        &pixelByteCode_shadows,
+        &errorPixelCode);
+    device->CreatePixelShader(
+        pixelByteCode_shadows->GetBufferPointer(),
+        pixelByteCode_shadows->GetBufferSize(),
+        nullptr, &pixelShader_shadows);
+
+    D3D11_SAMPLER_DESC shadowSamplerDesc;
+    ZeroMemory(&shadowSamplerDesc, sizeof(shadowSamplerDesc));
+
+    shadowSamplerDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+    shadowSamplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+    shadowSamplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+    shadowSamplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+    shadowSamplerDesc.BorderColor[0] = 0;
+    shadowSamplerDesc.BorderColor[1] = 0;
+    shadowSamplerDesc.BorderColor[2] = 0;
+    shadowSamplerDesc.BorderColor[3] = 0;
+    shadowSamplerDesc.MinLOD = 0;
+    shadowSamplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+    shadowSamplerDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
+    shadowSamplerDesc.MaxAnisotropy = 1;
+    shadowSamplerDesc.MipLODBias = 0.0f;
+
+    device->CreateSamplerState(&shadowSamplerDesc, &shadowSampler);
+
+    CD3D11_RASTERIZER_DESC rastDesc = {};
+    rastDesc.CullMode = D3D11_CULL_FRONT;
+    rastDesc.FillMode = D3D11_FILL_SOLID /*D3D11_FILL_WIREFRAME*/;
+    rastDesc.DepthBias = 20000;
+    rastDesc.SlopeScaledDepthBias = 1.0f;
+    rastDesc.DepthBiasClamp = 0.0f;
+
+    res = device->CreateRasterizerState(&rastDesc, &rastState_shadows);
+
+    D3D11_BUFFER_DESC shadowBufferDesc = {};
+    shadowBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+    shadowBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    shadowBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    shadowBufferDesc.MiscFlags = 0;
+    shadowBufferDesc.StructureByteStride = 0;
+    shadowBufferDesc.ByteWidth = sizeof(shadowBuffData);
+
+    device->CreateBuffer(&shadowBufferDesc, nullptr, &shadowBuff);
+}
+
+void StickyObject::LightRender()
+{
+    context->RSSetState(rastState_shadows);
+
+    context->IASetInputLayout(inputLayout);
+    context->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    context->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+    context->VSSetConstantBuffers(0, 1, &transformBuffer);
+    UINT strides[] = { sizeof(VertexData) };
+    UINT offsets[] = { 0 };
+    context->IASetVertexBuffers(0, 1, &vertexBuffer, strides, offsets);
+    context->VSSetShader(vertexShader_shadows, nullptr, 0);
+    context->PSSetShader(pixelShader_shadows, nullptr, 0);
+
+    context->DrawIndexed(indices.size(), 0, 0);
+}
+
+void StickyObject::LightUpdate(DirectX::SimpleMath::Matrix lightViewProjection)
+{
+    shadowBuffData.transform = worldMatrix;
+    shadowBuffData.viewProjection = lightViewProjection.Transpose();
+
+    D3D11_MAPPED_SUBRESOURCE res = {};
+    context->Map(shadowBuff, 0, D3D11_MAP_WRITE_DISCARD, 0, &res);
+    memcpy(res.pData, &shadowBuffData, sizeof(ShadowBuffData));
+    context->Unmap(shadowBuff, 0);
 }

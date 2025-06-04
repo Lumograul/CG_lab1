@@ -9,8 +9,8 @@ using namespace DirectX::SimpleMath;
 
 void NewComponent::Initialize() {
     float a = 0.0f;
-    int stacks = 20;
-    int slices = 20;
+    int stacks = 36;
+    int slices = 36;
     int radius = 1;
     for (int i = 0; i <= stacks; ++i) {
         float phi = DirectX::XM_PI * i / stacks;
@@ -23,7 +23,7 @@ void NewComponent::Initialize() {
 
             points.push_back({
                 { x, y, z, 1.0f },
-                { 0.0f, a, 0.0f, 1.0f },
+                { 0.0f, 1.0, 0.0f, 1.0f },
                 { 0.0f, 0.0f }
                 });
         }
@@ -45,6 +45,43 @@ void NewComponent::Initialize() {
             indeces.push_back(first + 1);
             indeces.push_back(second + 1);
         }
+    }
+
+    for (auto& v : points) {
+        v.normal = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
+    }
+
+    for (size_t i = 0; i < indeces.size(); i += 3) {
+        uint32_t i0 = indeces[i];
+        uint32_t i1 = indeces[i + 1];
+        uint32_t i2 = indeces[i + 2];
+
+        auto& v0 = points[i0].position;
+        auto& v1 = points[i1].position;
+        auto& v2 = points[i2].position;
+
+        DirectX::XMVECTOR p0 = DirectX::XMLoadFloat4(&v0);
+        DirectX::XMVECTOR p1 = DirectX::XMLoadFloat4(&v1);
+        DirectX::XMVECTOR p2 = DirectX::XMLoadFloat4(&v2);
+
+        DirectX::XMVECTOR edge1 = DirectX::XMVectorSubtract(p1, p0);
+        DirectX::XMVECTOR edge2 = DirectX::XMVectorSubtract(p2, p0);
+
+        DirectX::XMVECTOR faceNormal = DirectX::XMVector3Cross(edge1, edge2);
+
+        // ƒобавл€ем нормаль к вершинам
+        for (uint32_t idx : { i0, i1, i2 }) {
+            auto& n = points[idx].normal;
+            DirectX::XMVECTOR normalVec = DirectX::XMLoadFloat3(&n);
+            normalVec = DirectX::XMVectorAdd(normalVec, faceNormal);
+            DirectX::XMStoreFloat3(&n, normalVec);
+        }
+    }
+
+    for (auto& v : points) {
+        DirectX::XMVECTOR n = DirectX::XMLoadFloat3(&v.normal);
+        n = DirectX::XMVector3Normalize(n);
+        DirectX::XMStoreFloat3(&v.normal, n);
     }
 
 
@@ -104,13 +141,14 @@ void NewComponent::Initialize() {
             D3D11_INPUT_PER_VERTEX_DATA,
             0}, 
         D3D11_INPUT_ELEMENT_DESC 
-        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0}
+        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        { "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT,    0, offsetof(VertexData, normal),    D3D11_INPUT_PER_VERTEX_DATA, 0 },
     };
 
 
     device->CreateInputLayout(
         inputElements,
-        3,
+        4,
         vertexBC->GetBufferPointer(),
         vertexBC->GetBufferSize(),
         &layout);
@@ -154,25 +192,41 @@ void NewComponent::Initialize() {
     indexData.SysMemSlicePitch = 0;
 
     device->CreateBuffer(&indexBufDesc, &indexData, &ib);
+
+    //Constant buffers: light
+    D3D11_BUFFER_DESC lightBufferDesc = {};
+    lightBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+    lightBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    lightBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    lightBufferDesc.MiscFlags = 0;
+    lightBufferDesc.StructureByteStride = 0;
+    lightBufferDesc.ByteWidth = sizeof(LightData);
+
+    device->CreateBuffer(&lightBufferDesc, nullptr, &lightBuffer);
+
+    lightData = {};
 }
 
 void NewComponent::Draw() {
-    UINT strides[] = { sizeof(VertexData)};
+    UINT strides[] = { sizeof(VertexData) };
     UINT offsets[] = { 0 };
     struct TextureFlags { int usTexture = 0; float padding[3]; } flags;
     ID3D11Buffer* flagBuffer = CreateFlagBuffer(device, &flags, sizeof(flags));
     context->PSSetConstantBuffers(2, 1, &flagBuffer);
     context->VSSetConstantBuffers(0, 1, &cb);
+
     context->IASetInputLayout(layout);
     context->IASetIndexBuffer(ib, DXGI_FORMAT_R32_UINT, 0);
     context->IASetVertexBuffers(0, 1, &vb, strides, offsets);
     context->VSSetShader(vertexShader, nullptr, 0);
     context->PSSetShader(pixelShader, nullptr, 0);
     context->DrawIndexed(indeces.size(), 0, 0);
+    context->PSSetConstantBuffers(3, 1, &lightBuffer);
+
 }
 
 
-void NewComponent::Update(Vector3 cameraForward, Vector3 cameraPosition, float surfaceHeight) {
+void NewComponent::Update(Vector3 cameraForward, Vector3 cameraPosition, float surfaceHeight, DirectX::SimpleMath::Matrix lightViewProjection) {
     D3D11_MAPPED_SUBRESOURCE res = {};
     transl.y = 1.0f + surfaceHeight;
     if (inpDevice->IsKeyDown(Keys::W)) {
@@ -182,13 +236,10 @@ void NewComponent::Update(Vector3 cameraForward, Vector3 cameraPosition, float s
         angle += DirectX::XMConvertToRadians(5.0f);
     }
     
-    /*transl 
-    cameraPosition*/
     Vector3 direction = transl - cameraPosition;
     // 2. —троим нормаль плоскости (перпендикул€рно вектору направлени€ и оси Y)
     Vector3 planeNormal = direction.Cross(Vector3::UnitY);
 
-    // ≈сли вектор направлени€ параллелен оси Y, используем другую ось дл€ построени€ нормали
     if (planeNormal.LengthSquared() < 0.0001f) {
         planeNormal = direction.Cross(Vector3::UnitX);
     }
@@ -207,6 +258,17 @@ void NewComponent::Update(Vector3 cameraForward, Vector3 cameraPosition, float s
     auto dataPtr = reinterpret_cast<Matrix*>(res.pData);
     memcpy(dataPtr, &transformationMatrix, sizeof(transformationMatrix));
     context->Unmap(cb, 0);
+
+    lightData.directional = dirLight;
+    lightData.material = material;
+    lightData.camera = { cameraPosition.x, cameraPosition.y, cameraPosition.z, 1.0f };
+
+    lightData.lightSpace = lightViewProjection;
+
+    D3D11_MAPPED_SUBRESOURCE resLight = {};
+    context->Map(lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resLight);
+    memcpy(resLight.pData, &lightData, sizeof(LightData));
+    context->Unmap(lightBuffer, 0);
 }
 
 void NewComponent::DestroyResources() {
@@ -220,4 +282,105 @@ void NewComponent::DestroyResources() {
 DirectX::BoundingSphere NewComponent::GetBoundingSphere() const {
     using namespace DirectX::SimpleMath;
     return DirectX::BoundingSphere(transl, 1.0f);
+}
+
+void NewComponent::CreateShadowShaders()
+{
+    ID3DBlob* errorVertexCode = nullptr;
+    HRESULT res = D3DCompileFromFile(L"./Shaders/MyVeryFirstShader.hlsl",
+        nullptr /*macros*/,
+        nullptr /*include*/,
+        "VSMain",
+        "vs_5_0",
+        D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
+        0,
+        &vertexByteCode_shadows,
+        &errorVertexCode);
+        device->CreateVertexShader(
+        vertexByteCode_shadows->GetBufferPointer(),
+        vertexByteCode_shadows->GetBufferSize(),
+        nullptr, &vertexShader_shadows);
+
+
+    ID3DBlob* errorPixelCode = nullptr;
+    res = D3DCompileFromFile(L"./Shaders/MyVeryFirstShader.hlsl",
+        nullptr /*macros*/,
+        nullptr /*include*/,
+        "PSMain",
+        "ps_5_0",
+        D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
+        0,
+        &pixelByteCode_shadows,
+        &errorPixelCode);
+        device->CreatePixelShader(
+        pixelByteCode_shadows->GetBufferPointer(),
+        pixelByteCode_shadows->GetBufferSize(),
+        nullptr, &pixelShader_shadows);
+
+    D3D11_SAMPLER_DESC shadowSamplerDesc;
+    ZeroMemory(&shadowSamplerDesc, sizeof(shadowSamplerDesc));
+
+    shadowSamplerDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+    shadowSamplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+    shadowSamplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+    shadowSamplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+    shadowSamplerDesc.BorderColor[0] = 0;
+    shadowSamplerDesc.BorderColor[1] = 0;
+    shadowSamplerDesc.BorderColor[2] = 0;
+    shadowSamplerDesc.BorderColor[3] = 0;
+    shadowSamplerDesc.MinLOD = 0;
+    shadowSamplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+    shadowSamplerDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
+    shadowSamplerDesc.MaxAnisotropy = 1;
+    shadowSamplerDesc.MipLODBias = 0.0f;
+
+   device->CreateSamplerState(&shadowSamplerDesc, &shadowSampler);
+
+    CD3D11_RASTERIZER_DESC rastDesc = {};
+    rastDesc.CullMode = D3D11_CULL_FRONT;
+    rastDesc.FillMode = D3D11_FILL_SOLID /*D3D11_FILL_WIREFRAME*/;
+    rastDesc.DepthBias = 20000;
+    rastDesc.SlopeScaledDepthBias = 1.0f;
+    rastDesc.DepthBiasClamp = 0.0f;
+
+    res = device->CreateRasterizerState(&rastDesc, &rastState_shadows);
+
+    D3D11_BUFFER_DESC shadowBufferDesc = {};
+    shadowBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+    shadowBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    shadowBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    shadowBufferDesc.MiscFlags = 0;
+    shadowBufferDesc.StructureByteStride = 0;
+    shadowBufferDesc.ByteWidth = sizeof(shadowBuffData);
+
+    device->CreateBuffer(&shadowBufferDesc, nullptr, &shadowBuff);
+}
+
+void NewComponent::LightRender()
+{
+    context->RSSetState(rastState_shadows);
+
+    context->IASetInputLayout(layout);
+    context->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    context->IASetIndexBuffer(ib, DXGI_FORMAT_R32_UINT, 0);
+
+    context->VSSetConstantBuffers(0, 1, &cb);
+    UINT strides[] = { sizeof(VertexData) };
+    UINT offsets[] = { 0 };
+    context->IASetVertexBuffers(0, 1, &vb, strides, offsets);
+    context->VSSetShader(vertexShader_shadows, nullptr, 0);
+    context->PSSetShader(pixelShader_shadows, nullptr, 0);
+
+    context->DrawIndexed(indeces.size(), 0, 0);
+}
+
+void NewComponent::LightUpdate(DirectX::SimpleMath::Matrix lightViewProjection)
+{
+    shadowBuffData.transform = transformationMatrix;
+    shadowBuffData.viewProjection = lightViewProjection.Transpose();
+
+    D3D11_MAPPED_SUBRESOURCE res = {};
+    context->Map(shadowBuff, 0, D3D11_MAP_WRITE_DISCARD, 0, &res);
+    memcpy(res.pData, &shadowBuffData, sizeof(ShadowBuffData));
+    context->Unmap(shadowBuff, 0);
 }

@@ -28,6 +28,7 @@
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="InputDevice.cpp" />
     <ClCompile Include="MySuper3DApp.cpp" />
+    <ClCompile Include="Shadow.cpp" />
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="RectangleComponent.cpp" />
     <ClCompile Include="StickyObject.cpp" />
@@ -42,6 +43,7 @@
   <ItemGroup>
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Grid.h" />
+    <ClInclude Include="LightHelper.h" />
     <ClInclude Include="ModelLoader.h" />
     <ClInclude Include="NewComponent.h" />
     <ClInclude Include="Delegates.h" />
@@ -51,6 +53,7 @@
     <ClInclude Include="InputDevice.h" />
     <ClInclude Include="Keys.h" />
     <ClInclude Include="RectangleComponent.h" />
+    <ClInclude Include="Shadow.h" />
     <ClInclude Include="StickyObject.h" />
     <ClInclude Include="Terrain.h" />
   </ItemGroup>
