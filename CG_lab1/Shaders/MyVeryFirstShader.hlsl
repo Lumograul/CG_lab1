@@ -1,6 +1,7 @@
 struct VS_IN
 {
     float4 pos : POSITION0;
+    float4 col : COLOR;
     float2 tex : TEXCOORD0;
     float3 normal : NORMAL;
 };
@@ -14,7 +15,6 @@ cbuffer ConstBuf : register(b0)
 {
     matrix transformations;
     matrix viewProj;
-    float4 color;
 };
 
 PS_IN VSMain(VS_IN input)

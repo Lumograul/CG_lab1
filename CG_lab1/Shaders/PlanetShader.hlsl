@@ -126,7 +126,7 @@ PS_IN VSMain(VS_IN input)
     output.worldPos = mul(input.pos, transformationMatrix);
     output.pos = mul(output.worldPos, viewProjection);
     output.col = input.col;
-    output.tex = input.tex; // Передаем текстурные координаты
+    output.tex = input.tex;
     
     output.normal = normalize(mul(float4(input.normal, 0.0f), transformationMatrix));
     

@@ -643,8 +643,8 @@ void Game::UpdateLight()
     DirectX::SimpleMath::Vector3 sceneCenter(0.0f, 0.0f, 0.0f);
     DirectX::SimpleMath::Vector3 lightCameraPos = sceneCenter - DirectX::SimpleMath::Vector4(1.0f, 1.0f, 0.0f, 1.0f) * 25.0f;
 
-    lightView = DirectX::SimpleMath::Matrix::CreateLookAt(lightCameraPos, sceneCenter, DirectX::SimpleMath::Vector3::Up).Transpose();
-    lightProjection = DirectX::SimpleMath::Matrix::CreateOrthographic(64, 64, 0.1f, 100.0f).Transpose();
+    lightView = DirectX::SimpleMath::Matrix::CreateLookAt(lightCameraPos, sceneCenter, DirectX::SimpleMath::Vector3::Up);
+    lightProjection = DirectX::SimpleMath::Matrix::CreateOrthographic(100.0f, 100.0f, 0.1f, 100.0f);
 }
 
 void Game::RenderShadowMap()

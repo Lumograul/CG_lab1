@@ -345,6 +345,35 @@ void StickyObject::CreateShadowShaders()
         pixelByteCode_shadows->GetBufferSize(),
         nullptr, &pixelShader_shadows);
 
+    D3D11_INPUT_ELEMENT_DESC inputElements[] = {
+    D3D11_INPUT_ELEMENT_DESC {
+        "POSITION",
+        0,
+        DXGI_FORMAT_R32G32B32A32_FLOAT,
+        0,
+        0,
+        D3D11_INPUT_PER_VERTEX_DATA,
+        0},
+    D3D11_INPUT_ELEMENT_DESC {
+        "COLOR",
+        0,
+        DXGI_FORMAT_R32G32B32A32_FLOAT,
+        0,
+        D3D11_APPEND_ALIGNED_ELEMENT,
+        D3D11_INPUT_PER_VERTEX_DATA,
+        0},
+    D3D11_INPUT_ELEMENT_DESC
+    {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0},
+    { "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT,    0, offsetof(VertexData, normal),    D3D11_INPUT_PER_VERTEX_DATA, 0 },
+    };
+
+    device->CreateInputLayout(
+        inputElements,
+        4,
+        vertexByteCode_shadows->GetBufferPointer(),
+        pixelByteCode_shadows->GetBufferSize(),
+        &shadowLayout);
+
     D3D11_SAMPLER_DESC shadowSamplerDesc;
     ZeroMemory(&shadowSamplerDesc, sizeof(shadowSamplerDesc));
 
@@ -404,7 +433,7 @@ void StickyObject::LightRender()
 
 void StickyObject::LightUpdate(DirectX::SimpleMath::Matrix lightViewProjection)
 {
-    shadowBuffData.transform = worldMatrix;
+    shadowBuffData.transform = worldMatrix.Transpose();
     shadowBuffData.viewProjection = lightViewProjection.Transpose();
 
     D3D11_MAPPED_SUBRESOURCE res = {};

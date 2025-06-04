@@ -63,7 +63,6 @@ public:
     struct ShadowBuffData {
         DirectX::SimpleMath::Matrix transform;
         DirectX::SimpleMath::Matrix viewProjection;
-        DirectX::SimpleMath::Vector4 color;
     };
 
     ShadowBuffData shadowBuffData;
@@ -75,6 +74,7 @@ public:
     ID3D11RasterizerState* rastState_shadows;
     ID3D11VertexShader* vertexShader_shadows;
     ID3DBlob* vertexByteCode_shadows;
+    ID3D11InputLayout* shadowLayout;
 
     ID3D11PixelShader* pixelShader_shadows;
     ID3DBlob* pixelByteCode_shadows;
