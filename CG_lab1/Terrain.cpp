@@ -131,7 +131,7 @@ void Terrain::CreateShaders() {
 
     if (errorBlob)
     {
-       std::cout << static_cast<const char*>(errorBlob->GetBufferPointer());
+        std::cout << static_cast<const char*>(errorBlob->GetBufferPointer());
     }
 
     device->CreateVertexShader(
@@ -232,7 +232,7 @@ void Terrain::Render(DirectX::SimpleMath::Vector3 cameraPos, Shadow* shadow, Dir
     context->Map(transformBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
     memcpy(mappedResource.pData, &world, sizeof(DirectX::SimpleMath::Matrix));
     context->Unmap(transformBuffer, 0);
-        
+
     // Настройка рендер-конвейера
     UINT stride = sizeof(Vertex);
     UINT offset = 0;
@@ -316,7 +316,7 @@ void Terrain::CreateShadowShaders()
         0,
         &vertexByteCode_shadows,
         &errorVertexCode);
-        device->CreateVertexShader(
+    device->CreateVertexShader(
         vertexByteCode_shadows->GetBufferPointer(),
         vertexByteCode_shadows->GetBufferSize(),
         nullptr, &vertexShader_shadows);
@@ -332,39 +332,10 @@ void Terrain::CreateShadowShaders()
         0,
         &pixelByteCode_shadows,
         &errorPixelCode);
-        device->CreatePixelShader(
+    device->CreatePixelShader(
         pixelByteCode_shadows->GetBufferPointer(),
         pixelByteCode_shadows->GetBufferSize(),
         nullptr, &pixelShader_shadows);
-
-        D3D11_INPUT_ELEMENT_DESC inputElements[] = {
-        D3D11_INPUT_ELEMENT_DESC {
-            "POSITION",
-            0,
-            DXGI_FORMAT_R32G32B32A32_FLOAT,
-            0,
-            0,
-            D3D11_INPUT_PER_VERTEX_DATA,
-            0},
-        D3D11_INPUT_ELEMENT_DESC {
-            "COLOR",
-            0,
-            DXGI_FORMAT_R32G32B32A32_FLOAT,
-            0,
-            D3D11_APPEND_ALIGNED_ELEMENT,
-            D3D11_INPUT_PER_VERTEX_DATA,
-            0},
-        D3D11_INPUT_ELEMENT_DESC
-        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        { "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT,    0, offsetof(VertexData, normal),    D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        };
-
-        device->CreateInputLayout(
-            inputElements,
-            4,
-            vertexByteCode_shadows->GetBufferPointer(),
-            pixelByteCode_shadows->GetBufferSize(),
-            &shadowLayout);
 
     D3D11_SAMPLER_DESC shadowSamplerDesc;
     ZeroMemory(&shadowSamplerDesc, sizeof(shadowSamplerDesc));
@@ -409,7 +380,7 @@ void Terrain::LightRender()
 {
     context->RSSetState(rastState_shadows);
 
-    context->IASetInputLayout(shadowLayout);
+    context->IASetInputLayout(inputLayout);
     context->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     context->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 

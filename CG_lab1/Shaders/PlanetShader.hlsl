@@ -87,7 +87,7 @@ float CalculateShadow(float4 lightSpacePos)
     }
     
     float shadow = 0.0;
-    float2 texelSize = 1.0 / float2(128, 128);
+    float2 texelSize = 1.0 / float2(2048, 2048);
     
     for (int x = -1; x <= 1; ++x)
     {
@@ -97,10 +97,11 @@ float CalculateShadow(float4 lightSpacePos)
         }
     }
     
-    shadow /= 9.0;
+    shadow /= 11.0;
     
     return shadow;
 }
+
 
 
 cbuffer ObjectBuffer : register(b0)
@@ -145,7 +146,8 @@ float4 PSMain(PS_IN input) : SV_TARGET
     {
         baseColor = input.col;
     }
-    
+    baseColor.xyz = pow(baseColor.xyz, 2.2);
+
     float4 lightSpacePos = mul(input.worldPos, lightSpace);
     float shadowFactor = CalculateShadow(lightSpacePos);
     
@@ -162,7 +164,7 @@ float4 PSMain(PS_IN input) : SV_TARGET
     
     finalColor *= shadowFactor;
 
-
+    finalColor = pow(finalColor, 1.0 / 2.2);
     // Альфа остается из базового цвета
     finalColor.a = baseColor.a;
 

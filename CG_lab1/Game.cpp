@@ -67,7 +67,7 @@ void Game::Initialize() {
 
 
     dirLightShadows = new Shadow();
-    dirLightShadows->Initialize(device, 512, 512);
+    dirLightShadows->Initialize(device, 4096, 4096);
 
 #pragma region Pong
     //std::vector<int> indeces = { 0,1,2, 1,0,3 };
@@ -226,7 +226,7 @@ void Game::Initialize() {
 
 
     //stickers.push_back(new StickyObject(device.Get(), context, { -10.0f, terrain->GetHeightAt(5.0f, 0.0f) + 0.3f, 0.0f }, inpDevice));
-    stickers.push_back(new StickyObject(device.Get(), context, { -5.f, terrain->GetHeightAt(5.0f, 0.0f) - 0.3f, 0.0f }, inpDevice, path, pathMtl));
+    stickers.push_back(new StickyObject(device.Get(), context, { -5.f, terrain->GetHeightAt(5.0f, 0.0f) - 0.5f, 0.0f }, inpDevice, path, pathMtl));
     //stickers.push_back(new StickyObject(device.Get(), context, { -7.5f, terrain->GetHeightAt(5.0f, 0.0f) + 0.3f, 0.0f }, inpDevice));
 
 
@@ -641,7 +641,7 @@ void Game::UpdateLight()
     DirectX::SimpleMath::Vector3 lightCameraPos = sceneCenter - DirectX::SimpleMath::Vector4(0.0f, -1.0f, 1.0f, 1.0f) * 25.0f;
 
     lightView = DirectX::SimpleMath::Matrix::CreateLookAt(lightCameraPos, sceneCenter, DirectX::SimpleMath::Vector3::Up);
-    lightProjection = DirectX::SimpleMath::Matrix::CreateOrthographic(64, 64, 0.1f, 100.0f);
+    lightProjection = DirectX::SimpleMath::Matrix::CreateOrthographic(100.0f, 100.0f, 0.1f, 300.0f);
 }
 
 void Game::RenderShadowMap()

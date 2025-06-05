@@ -17,7 +17,7 @@ private:
 public:
     float GetHeightAt(float x, float z) const;
 
-    
+
 
     Terrain(ID3D11Device* device, ID3D11DeviceContext* context, float width, float depth, int gridSize);
     void Initialize();

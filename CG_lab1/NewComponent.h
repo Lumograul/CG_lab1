@@ -64,7 +64,7 @@ public:
     float angle = 0;
 
     LightData lightData;
-    std::vector<VertexData> points; 
+    std::vector<VertexData> points;
     ID3D11InputLayout* layout;
     ID3D11Buffer* vb;
     ID3D11Buffer* ib;
@@ -80,7 +80,7 @@ public:
     float spinVelocity;
     InputDevice* inpDevice;
     //std::vector<StickyObject> stickers;
-    
+
     DirectionalLight dirLight = {
         DirectX::SimpleMath::Vector4(0.9f, 0.9f, 0.9f, 1.0f),
         DirectX::SimpleMath::Vector4(1.0f, 1.1f, 1.1f, 1.0f),
@@ -117,10 +117,10 @@ public:
         spinVelocity(spinVelocity)
     {
     }
-    void Initialize() ;
-    void Draw(Shadow* shadow) ;
-    void Update(DirectX::SimpleMath::Vector3 cameraForward, DirectX::SimpleMath::Vector3 cameraPosition, float surfaceHeight, DirectX::SimpleMath::Matrix lightViewProjection) ;
-    void DestroyResources() ;
+    void Initialize();
+    void Draw(Shadow* shadow);
+    void Update(DirectX::SimpleMath::Vector3 cameraForward, DirectX::SimpleMath::Vector3 cameraPosition, float surfaceHeight, DirectX::SimpleMath::Matrix lightViewProjection);
+    void DestroyResources();
 
     DirectX::BoundingSphere GetBoundingSphere() const;
 

@@ -139,8 +139,8 @@ void NewComponent::Initialize() {
             0,
             D3D11_APPEND_ALIGNED_ELEMENT,
             D3D11_INPUT_PER_VERTEX_DATA,
-            0}, 
-        D3D11_INPUT_ELEMENT_DESC 
+            0},
+        D3D11_INPUT_ELEMENT_DESC
         {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0},
         { "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT,    0, offsetof(VertexData, normal),    D3D11_INPUT_PER_VERTEX_DATA, 0 },
     };
@@ -239,7 +239,7 @@ void NewComponent::Update(Vector3 cameraForward, Vector3 cameraPosition, float s
         transl.z = cameraForward.z;
         angle += DirectX::XMConvertToRadians(5.0f);
     }
-    
+
     Vector3 direction = transl - cameraPosition;
     // 2. Строим нормаль плоскости (перпендикулярно вектору направления и оси Y)
     Vector3 planeNormal = direction.Cross(Vector3::UnitY);
@@ -256,7 +256,7 @@ void NewComponent::Update(Vector3 cameraForward, Vector3 cameraPosition, float s
     Matrix translM = Matrix::CreateTranslation(transl);
 
     transformationMatrix = (scaleM * rotatM * translM).Transpose();
-    
+
     context->Map(cb, 0, D3D11_MAP_WRITE_DISCARD, 0, &res);
 
     auto dataPtr = reinterpret_cast<Matrix*>(res.pData);
@@ -267,7 +267,7 @@ void NewComponent::Update(Vector3 cameraForward, Vector3 cameraPosition, float s
     lightData.material = material;
     lightData.camera = { cameraPosition.x, cameraPosition.y, cameraPosition.z, 1.0f };
 
-    lightData.lightSpace = lightViewProjection;
+    lightData.lightSpace = lightViewProjection.Transpose();
 
     D3D11_MAPPED_SUBRESOURCE resLight = {};
     context->Map(lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resLight);
@@ -281,7 +281,7 @@ void NewComponent::DestroyResources() {
     if (vertexShader) vertexShader->Release();
     if (pixelShader) pixelShader->Release();
     if (layout) layout->Release();
-}   
+}
 
 DirectX::BoundingSphere NewComponent::GetBoundingSphere() const {
     using namespace DirectX::SimpleMath;
@@ -322,37 +322,7 @@ void NewComponent::CreateShadowShaders()
     device->CreatePixelShader(
         pixelByteCode_shadows->GetBufferPointer(),
         pixelByteCode_shadows->GetBufferSize(),
-        nullptr, &pixelShader_shadows
-    );
-
-    D3D11_INPUT_ELEMENT_DESC inputElements[] = {
-        D3D11_INPUT_ELEMENT_DESC {
-            "POSITION",
-            0,
-            DXGI_FORMAT_R32G32B32A32_FLOAT,
-            0,
-            0,
-            D3D11_INPUT_PER_VERTEX_DATA,
-            0},
-        D3D11_INPUT_ELEMENT_DESC {
-            "COLOR",
-            0,
-            DXGI_FORMAT_R32G32B32A32_FLOAT,
-            0,
-            D3D11_APPEND_ALIGNED_ELEMENT,
-            D3D11_INPUT_PER_VERTEX_DATA,
-            0},
-        D3D11_INPUT_ELEMENT_DESC
-        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        { "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT,    0, offsetof(VertexData, normal),    D3D11_INPUT_PER_VERTEX_DATA, 0 },
-    };
-
-    device->CreateInputLayout(
-        inputElements,
-        4,
-        vertexByteCode_shadows->GetBufferPointer(),
-        pixelByteCode_shadows->GetBufferSize(),
-        &shadowLayout);
+        nullptr, &pixelShader_shadows);
 
     D3D11_SAMPLER_DESC shadowSamplerDesc;
     ZeroMemory(&shadowSamplerDesc, sizeof(shadowSamplerDesc));
@@ -371,7 +341,7 @@ void NewComponent::CreateShadowShaders()
     shadowSamplerDesc.MaxAnisotropy = 1;
     shadowSamplerDesc.MipLODBias = 0.0f;
 
-   device->CreateSamplerState(&shadowSamplerDesc, &shadowSampler);
+    device->CreateSamplerState(&shadowSamplerDesc, &shadowSampler);
 
     CD3D11_RASTERIZER_DESC rastDesc = {};
     rastDesc.CullMode = D3D11_CULL_FRONT;
@@ -397,7 +367,7 @@ void NewComponent::LightRender()
 {
     context->RSSetState(rastState_shadows);
 
-    context->IASetInputLayout(shadowLayout);
+    context->IASetInputLayout(layout);
     context->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     context->IASetIndexBuffer(ib, DXGI_FORMAT_R32_UINT, 0);
 
