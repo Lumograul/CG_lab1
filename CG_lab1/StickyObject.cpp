@@ -217,7 +217,7 @@ void StickyObject::Initialize(const std::string& path, const std::string& textur
     psBlob->Release();
 }
 
-void StickyObject::Draw() {
+void StickyObject::Draw(Shadow* shadow) {
     UINT stride = sizeof(Vertex);
     UINT offset = 0;
 
@@ -239,10 +239,14 @@ void StickyObject::Draw() {
     context->PSSetShader(pixelShader, nullptr, 0);
     context->PSSetConstantBuffers(3, 1, &lightBuffer);
 
+    shadowsResource = shadow->GetShadowMapDSV();
+    context->PSSetShaderResources(1, 1, &shadowsResource);
+    context->PSSetSamplers(1, 1, &shadowSampler);
+
     context->DrawIndexed(indices.size(), 0, 0);
 }
 
-void StickyObject::Update(const Vector3& ballCenter, float ballRadius, Vector3 rotationAxis, float angle, DirectX::SimpleMath::Vector3 camPos) {
+void StickyObject::Update(const Vector3& ballCenter, float ballRadius, Vector3 rotationAxis, float angle, Vector3 camPos, Matrix lightViewProjection) {
     if (mode == Mode::Attached) {
         Vector3 rotatedPos = RotateVector(startAttachmentCoords, startAttachmentRotationAxis, angle - startAttachmentBallAngle);
         Vector3 direction = rotationAxis.Cross(Vector3::Up);
@@ -273,6 +277,8 @@ void StickyObject::Update(const Vector3& ballCenter, float ballRadius, Vector3 r
     lightData.directional = dirLight;
     lightData.material = material;
     lightData.camera = { camPos.x, camPos.y, camPos.z, 1.0f };
+
+    lightData.lightSpace = lightViewProjection.Transpose();
 
     D3D11_MAPPED_SUBRESOURCE resLight = {};
     context->Map(lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resLight);
@@ -417,11 +423,11 @@ void StickyObject::LightRender()
 {
     context->RSSetState(rastState_shadows);
 
-    context->IASetInputLayout(inputLayout);
+    context->IASetInputLayout(shadowLayout);
     context->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     context->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-    context->VSSetConstantBuffers(0, 1, &transformBuffer);
+    context->VSSetConstantBuffers(0, 1, &shadowBuff);
     UINT strides[] = { sizeof(VertexData) };
     UINT offsets[] = { 0 };
     context->IASetVertexBuffers(0, 1, &vertexBuffer, strides, offsets);

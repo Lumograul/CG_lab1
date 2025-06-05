@@ -76,8 +76,8 @@ public:
     ~StickyObject();
 
     void Initialize(const std::string& path = "", const std::string& texturePath = "", const DirectX::XMFLOAT4& color = { 1.0f, 1.0f, 1.0f, 1.0f });
-    void Draw();
-    void Update(const DirectX::SimpleMath::Vector3& ballCenter, float ballRadius, const DirectX::SimpleMath::Vector3 rotationAxis, float angle, DirectX::SimpleMath::Vector3 camPos);
+    void Draw(Shadow* shadow);
+    void Update(const DirectX::SimpleMath::Vector3& ballCenter, float ballRadius, const DirectX::SimpleMath::Vector3 rotationAxis, float angle, DirectX::SimpleMath::Vector3 camPos, DirectX::SimpleMath::Matrix lightViewProjection);
     void Attach(const DirectX::SimpleMath::Vector3& ballCenter, float ballRadius, float ballAngle, const DirectX::SimpleMath::Vector3 ballRotAxis);
     DirectX::BoundingBox GetBoundingBox() const;
 

@@ -11,6 +11,7 @@
 #include <iostream>
 #include "InputDevice.h"
 #include "Camera.h"
+#include "Shadow.h"
 
 struct VertexData {
     DirectX::XMFLOAT4 position;
@@ -79,8 +80,7 @@ public:
     float spinVelocity;
     InputDevice* inpDevice;
     //std::vector<StickyObject> stickers;
-    bool PPressedLastFrame{ false };
-
+    
     DirectionalLight dirLight = {
         DirectX::SimpleMath::Vector4(0.9f, 0.9f, 0.9f, 1.0f),
         DirectX::SimpleMath::Vector4(1.0f, 1.1f, 1.1f, 1.0f),
@@ -118,7 +118,7 @@ public:
     {
     }
     void Initialize() ;
-    void Draw() ;
+    void Draw(Shadow* shadow) ;
     void Update(DirectX::SimpleMath::Vector3 cameraForward, DirectX::SimpleMath::Vector3 cameraPosition, float surfaceHeight, DirectX::SimpleMath::Matrix lightViewProjection) ;
     void DestroyResources() ;
 

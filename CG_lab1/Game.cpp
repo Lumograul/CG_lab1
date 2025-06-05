@@ -264,8 +264,10 @@ void Game::Run() {
             DispatchMessage(&msg);
         }
         if (msg.message == WM_QUIT) isExitRequested = true;
+
         UpdateLight();
         RenderShadowMap();
+
         context->ClearState();
         context->RSSetState(rastState);
 
@@ -277,7 +279,6 @@ void Game::Run() {
         viewport.MinDepth = 0;
         viewport.MaxDepth = 1.0f;
 
-
         D3D11_RECT scizors = {};
         scizors.left = 0;
         scizors.top = 0;
@@ -286,7 +287,6 @@ void Game::Run() {
         context->RSSetViewports(1, &viewport);
         context->RSSetScissorRects(1, &scizors);
         context->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
 
         /*auto	curTime = std::chrono::steady_clock::now();
         float	deltaTime = std::chrono::duration_cast<std::chrono::microseconds>(curTime - PrevTime).count() / 1000000.0f;
@@ -310,9 +310,6 @@ void Game::Run() {
         //float color[] = { totalTime, 0.1f, 0.1f, 1.0f };
         float color[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 
-
-
-        
         context->OMSetRenderTargets(1, &rtv, dsv);
         context->ClearRenderTargetView(rtv, color);
         context->ClearDepthStencilView(dsv, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
@@ -523,15 +520,14 @@ void Game::Run() {
         camera->Draw();
         camera->Update();
 
-
         for (auto& sticky : stickers) {
-            sticky->Draw();
+            sticky->Draw(dirLightShadows);
         }
 
-        ball->Draw();
+        ball->Draw(dirLightShadows);
         //components[1]->Draw();
         //grid->Render(); 
-        terrain->Render(camera->GetCamPos());
+        terrain->Render(camera->GetCamPos(), dirLightShadows, lightView * lightProjection);
 
         for (auto& sticky : stickers) {
             sticky->Update(
@@ -539,7 +535,8 @@ void Game::Run() {
                 1.0f,
                 ball->rotationAxis,
                 ball->angle,
-                camera->GetCamPos()
+                camera->GetCamPos(),
+                lightView * lightProjection
             );;
         }
 
@@ -641,10 +638,10 @@ RectF GetRectangleProperties(const std::vector<DirectX::XMFLOAT4>& points) {
 void Game::UpdateLight()
 {
     DirectX::SimpleMath::Vector3 sceneCenter(0.0f, 0.0f, 0.0f);
-    DirectX::SimpleMath::Vector3 lightCameraPos = sceneCenter - DirectX::SimpleMath::Vector4(1.0f, 1.0f, 0.0f, 1.0f) * 25.0f;
+    DirectX::SimpleMath::Vector3 lightCameraPos = sceneCenter - DirectX::SimpleMath::Vector4(0.0f, -1.0f, 1.0f, 1.0f) * 25.0f;
 
     lightView = DirectX::SimpleMath::Matrix::CreateLookAt(lightCameraPos, sceneCenter, DirectX::SimpleMath::Vector3::Up);
-    lightProjection = DirectX::SimpleMath::Matrix::CreateOrthographic(100.0f, 100.0f, 0.1f, 100.0f);
+    lightProjection = DirectX::SimpleMath::Matrix::CreateOrthographic(64, 64, 0.1f, 100.0f);
 }
 
 void Game::RenderShadowMap()
@@ -652,11 +649,11 @@ void Game::RenderShadowMap()
     dirLightShadows->SetRenderTarget(context);
     dirLightShadows->ClearRenderTarget(context, DirectX::SimpleMath::Vector4(0.0f, 0.0f, 0.0f, 1.0f));
 
-    ball->LightUpdate(lightView * lightProjection);
-    ball->LightRender();
-
     terrain->LightUpdate(lightView * lightProjection);
     terrain->LightRender();
+
+    ball->LightUpdate(lightView * lightProjection);
+    ball->LightRender();
 
     for (auto& sticky : stickers) {
         sticky->LightUpdate(lightView * lightProjection);

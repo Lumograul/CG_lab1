@@ -207,7 +207,7 @@ void NewComponent::Initialize() {
     lightData = {};
 }
 
-void NewComponent::Draw() {
+void NewComponent::Draw(Shadow* shadow) {
     UINT strides[] = { sizeof(VertexData) };
     UINT offsets[] = { 0 };
     struct TextureFlags { int usTexture = 0; float padding[3]; } flags;
@@ -217,12 +217,16 @@ void NewComponent::Draw() {
 
     context->IASetInputLayout(layout);
     context->IASetIndexBuffer(ib, DXGI_FORMAT_R32_UINT, 0);
+
+    shadowsResource = shadow->GetShadowMapDSV();
+    context->PSSetShaderResources(1, 1, &shadowsResource);
+    context->PSSetSamplers(1, 1, &shadowSampler);
+
     context->IASetVertexBuffers(0, 1, &vb, strides, offsets);
     context->VSSetShader(vertexShader, nullptr, 0);
     context->PSSetShader(pixelShader, nullptr, 0);
     context->DrawIndexed(indeces.size(), 0, 0);
     context->PSSetConstantBuffers(3, 1, &lightBuffer);
-
 }
 
 
@@ -397,7 +401,7 @@ void NewComponent::LightRender()
     context->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     context->IASetIndexBuffer(ib, DXGI_FORMAT_R32_UINT, 0);
 
-    context->VSSetConstantBuffers(0, 1, &cb);
+    context->VSSetConstantBuffers(0, 1, &shadowBuff);
     UINT strides[] = { sizeof(VertexData) };
     UINT offsets[] = { 0 };
     context->IASetVertexBuffers(0, 1, &vb, strides, offsets);
@@ -409,7 +413,7 @@ void NewComponent::LightRender()
 
 void NewComponent::LightUpdate(DirectX::SimpleMath::Matrix lightViewProjection)
 {
-    shadowBuffData.transform = transformationMatrix.Transpose();
+    shadowBuffData.transform = transformationMatrix;
     shadowBuffData.viewProjection = lightViewProjection.Transpose();
 
     D3D11_MAPPED_SUBRESOURCE res = {};

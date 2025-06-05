@@ -223,20 +223,10 @@ void Terrain::CreateBuffers() {
     lightData = {};
 }
 
-void Terrain::Render(DirectX::SimpleMath::Vector3 cameraPos) {
+void Terrain::Render(DirectX::SimpleMath::Vector3 cameraPos, Shadow* shadow, DirectX::SimpleMath::Matrix lightViewProjection) {
     // Настройка константного буфера
     XMMATRIX world = XMMatrixIdentity();
     world = XMMatrixTranspose(world);
-
-    //DirectX::SimpleMath::Vector3 scale{ 1.0f, 1.0f, 1.0f };
-    //DirectX::SimpleMath::Vector3 rotationAxis{ 0.0f, 1.0f, 0.0f };
-    //DirectX::SimpleMath::Vector3 transl{ 0.0f, 0.0f, 0.0f };
-    //DirectX::SimpleMath::Matrix scaleM = DirectX::SimpleMath::Matrix::CreateScale(scale);
-    //DirectX::SimpleMath::Matrix rotatM = DirectX::SimpleMath::Matrix::CreateFromAxisAngle(rotationAxis, 0);
-    //DirectX::SimpleMath::Matrix translM = DirectX::SimpleMath::Matrix::CreateTranslation(transl);
-
-    //DirectX::SimpleMath::Matrix transformationMatrix = (scaleM * rotatM * translM).Transpose();
-
 
     D3D11_MAPPED_SUBRESOURCE mappedResource;
     context->Map(transformBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
@@ -260,11 +250,16 @@ void Terrain::Render(DirectX::SimpleMath::Vector3 cameraPos) {
     context->PSSetShader(pixelShader, nullptr, 0);
     context->PSSetConstantBuffers(3, 1, &lightBuffer);
 
+    shadowsResource = shadow->GetShadowMapDSV();
+    context->PSSetShaderResources(1, 1, &shadowsResource);
+    context->PSSetSamplers(1, 1, &shadowSampler);
+
     context->DrawIndexed(indices.size(), 0, 0);
 
     lightData.directional = dirLight;
     lightData.material = material;
     lightData.camera = { cameraPos.x, cameraPos.y, cameraPos.z, 1.0f };
+    lightData.lightSpace = lightViewProjection.Transpose();
 
     D3D11_MAPPED_SUBRESOURCE resLight = {};
     context->Map(lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resLight);
@@ -414,12 +409,12 @@ void Terrain::LightRender()
 {
     context->RSSetState(rastState_shadows);
 
-    context->IASetInputLayout(inputLayout);
+    context->IASetInputLayout(shadowLayout);
     context->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     context->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-    context->VSSetConstantBuffers(0, 1, &transformBuffer);
-    UINT strides[] = { sizeof(VertexData) };
+    context->VSSetConstantBuffers(0, 1, &shadowBuff);
+    UINT strides[] = { sizeof(Vertex) };
     UINT offsets[] = { 0 };
     context->IASetVertexBuffers(0, 1, &vertexBuffer, strides, offsets);
     context->VSSetShader(vertexShader_shadows, nullptr, 0);

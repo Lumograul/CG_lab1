@@ -21,7 +21,7 @@ public:
 
     Terrain(ID3D11Device* device, ID3D11DeviceContext* context, float width, float depth, int gridSize);
     void Initialize();
-    void Render(DirectX::SimpleMath::Vector3 cameraPos);
+    void Render(DirectX::SimpleMath::Vector3 cameraPos, Shadow* shadow, DirectX::SimpleMath::Matrix lightViewProjection);
 
     ID3D11Device* device;
     ID3D11DeviceContext* context;
